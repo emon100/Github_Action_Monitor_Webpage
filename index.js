@@ -20,7 +20,16 @@ const SCKEY = process.env.SCKEY;
 
 
 const sitesConfig = {
-    '首页': null,
+    '东大创新网': {
+        type: "http",
+        siteUrl: "cxzx.neu.edu.cn",
+        path: "/main.htm",
+        parts: {
+            '通知公告': {
+                selector: ['#tzlist li:first-child div']
+            }
+        }
+    },
     '计算机学院官网': {
         type: "http",
         siteUrl: "www.cse.neu.edu.cn",
