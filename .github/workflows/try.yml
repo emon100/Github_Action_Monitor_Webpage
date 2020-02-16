@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  schedule:
+    - cron: '*/5 * * * *'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout this repo
+      uses: actions/checkout@master
+
+    - name: npm install
+      run: npm ci
+
+    - name: Do data work
+      run: node index.js
+      env:
+        SCKEY: ${{ secrets.SCKEY }}
+
+    - name: Get date
+      run: echo "::set-env name=REPORT_DATE::$(TZ=':Asia/Shanghai' date '+%Y-%m-%d %T')"
+
+    - name: Git Auto Commit
+      uses: stefanzweifel/git-auto-commit-action@v3.0.0
+      with:
+    # Commit message
+        commit_message: ${{ env.REPORT_DATE }}
+
+
+
