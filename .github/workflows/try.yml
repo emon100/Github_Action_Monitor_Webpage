@@ -27,9 +27,6 @@ jobs:
     - name: Check Output title
       if: steps.dataWork.outputs.changed == 'true'
       run: echo ${{ steps.dataWork.outputs.title }}
-    - name: Check Output title
-      if: steps.dataWork.outputs.changed == 'true'
-      run: echo ${{ steps.dataWork.outputs.pureText }}
 
     - name: Get date
       run: echo "::set-env name=REPORT_DATE::$(TZ=':Asia/Shanghai' date '+%Y-%m-%d %T')"

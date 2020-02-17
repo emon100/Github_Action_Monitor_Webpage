@@ -9,7 +9,6 @@ const cheerio = require('cheerio');
 const core = require('@actions/core');
 const fs = require('fs');
 const send = require('./send');
-const querystring = require('querystring');
 const config = require('./config/config');//TODO
 
 const headers = config.headers;
@@ -69,7 +68,7 @@ async function scrapSite(siteName, siteConfig) {
     //获得网站
     let response = null;
     try {
-        response = await send.Get(siteConfig['siteUrl'], siteConfig['path'], headers, siteConfig['protocol']);//await readFile('aaoneu.html');
+        response = await send.Get(siteConfig['siteHost'], headers, siteConfig['protocol']);//await readFile('aaoneu.html');
     } catch (e) {
         console.log('scrapSite catch: '+e);
     }
@@ -99,7 +98,8 @@ async function scrapSite(siteName, siteConfig) {
                 putNewsIntoContentObj(thisSiteContent, part, latestNews);
             }
         }
-    }else if (siteConfig['type']==='api'){
+    }else if (siteConfig['type']==='json'){
+        console.log(response);
         response = JSON.parse(response);
         let thisSiteContent = result[siteName] = {};
         for (const part of Object.keys(siteConfig['parts'])) {
@@ -298,6 +298,7 @@ async function workFlow() {
 
 
 workFlow().then(r => console.log("Everything is done :"+r));
+
 
 
 
