@@ -101,7 +101,6 @@ function putNewsIntoContentObj(obj, part, news) {
         obj[part] = {};
     }
     obj[part]['latestNews'] = news;
-    obj[part]['lastUpdated'] = Date();
 }
 
 async function scrapSite(siteName, siteConfig) {
