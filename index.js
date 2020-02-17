@@ -10,14 +10,14 @@ const core = require('@actions/core');
 const fs = require('fs');
 const send = require('./send');
 const querystring = require('querystring');
-const config = require('./config/config');
+const config = require('./config/config');//TODO
 
 const headers = config.headers;
 
-const jsonFile = './prevContent/try.json';
+//const jsonFile = './prevContent/try.json';//TODO
 
-const SCKEYS = [process.env.SCKEY];
-console.log(SCKEYS);
+//const SCKEYS = [process.env.SCKEY];//TODO
+//console.log(SCKEYS);
 
 
 
@@ -32,7 +32,7 @@ function readFile(src) {
             }
         });
     });
-}
+}//TODO
 
 //写文件工具
 function writeFile(src, string) {
@@ -44,7 +44,7 @@ function writeFile(src, string) {
             resolve(data);
         });
     });
-}
+}//TODO
 
 //得到网站设置
 function getSitesConfig() {
@@ -114,7 +114,7 @@ async function getNewContent(sitesConfig) {
     return newContent;
 }
 
-
+//找新老信息区别
 function diffContent(newObj, oldObj) {
     let result = {hasDiff: false, content: {}};
     let diff = result.content;
@@ -164,27 +164,29 @@ function pushToWeChat(message,SCKEY){
     return send.Post(opt, 'https', postData);
 }
 
-function createWeChatMessage(diff) {
+//利用区别创建信息
+function createMessage(diff) {
     const diffSites = Object.keys(diff);
 
     let text = `${diffSites[0]} ${diffSites.length > 1 ? '等' : ''} 有变化了`;
+    let pureText ='改变如下: \n';
     let desp = '### 改变如下: \n';
     for (const site of diffSites) {
+        pureText +=`${site}:\n`;
         desp += `#### ${site}:\n`;
         for (const part of Object.keys(diff[site])) {
             desp += `##### ${part}:\n\t${diff[site][part]['latestNews']}\n`;
+            pureText +=`\t${part}:\n\t\t${diff[site][part]['latestNews']}\n`
         }
     }
-    return {text:text,desp:desp};
+    return {pureText:pureText,text:text,desp:desp};
 }
-
 
 //对diff进行推送
 function pushDiff(diff) {
-
     let result = [];
     if(SCKEYS.length>0){
-        let message = createWeChatMessage(diff);
+        let message = createMessage(diff);
         console.log(message.text);
         console.log(message.desp);
         for (const SCKEY of SCKEYS){
@@ -195,10 +197,11 @@ function pushDiff(diff) {
 }
 
 
-//流水线：得到内容 -> 与之前内容对比 -> 写入文件 -> 有变化发请求
+//流水线：得到内容 -> 与之前内容对比 -> 写入变量
 
 async function workFlow() {
-    let fileReader = readFile(jsonFile);
+    const prevInfoPath = core.getInput('prevInfoPath',{ required: true });
+    let fileReader = readFile(prevInfoPath);
 
     //得到配置信息
     const sitesConfig = getSitesConfig();
@@ -209,12 +212,12 @@ async function workFlow() {
     console.log(JSON.stringify(newContent));
 
 
-    //异步读取json文件
+    //异步读取json文件，获得之前信息
     let oldContent = null;
     console.log('try reading oldContent');
     try {
         let fileResult = await fileReader;
-        oldContent = await JSON.parse(fileResult.toString());
+        oldContent = JSON.parse(fileResult.toString());
     } catch (e) {
         console.log(e);
     }
@@ -225,14 +228,19 @@ async function workFlow() {
     console.log('diff: '+JSON.stringify(diff));
 
 
-    //如果有区别，通知外界，让外界写入
+    //如果有区别，通知外界，把新内容写入文件
     console.log(`hasDiff: ${diff.hasDiff}`);
     if (diff.hasDiff) {
 
         let result = oldContent == null ? newContent : Object.assign(oldContent,newContent);
         result.lastUpdated = Date();
+        let message = createMessage(diff.content);
+        core.setOutput('changed', 'true');
+        core.setOutput('title',message.text);//server-chan
+        core.setOutput('markdownText',message.desp);//server-chan
+        core.setOutput('pureText',message.pureText);
 
-        //let write = writeFile(jsonFile, JSON.stringify(result));
+        await writeFile(prevInfoPath, JSON.stringify(result));
 
         /*
         let pushResults = await Promise.allSettled(pushDiff(diff.content));
@@ -257,6 +265,8 @@ async function workFlow() {
         }
         */
 
+    }else{
+        core.setOutput('changed', 'false');
     }
     return "Yes";
 }

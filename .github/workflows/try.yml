@@ -2,8 +2,8 @@ name: CI
 
 on:
   push:
-  schedule:
-    - cron: '*/5 * * * *'
+ # schedule:
+ #   - cron: '*/5 * * * *'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,8 +17,16 @@ jobs:
 
     - name: Do data work
       run: node index.js
-      env:
-        SCKEY: ${{ secrets.SCKEY }}
+      with:
+        prevInfoPath: './prevContent/try.json'
+      id: dataWork
+
+    - name: Check Output
+      run: echo ${{ steps.dataWork.outputs.changed }}
+
+    - name: Check Output
+      if: steps.dataWork.changed
+      run: echo ${{ steps.dataWork.outputs.title }}
 
     - name: Get date
       run: echo "::set-env name=REPORT_DATE::$(TZ=':Asia/Shanghai' date '+%Y-%m-%d %T')"
