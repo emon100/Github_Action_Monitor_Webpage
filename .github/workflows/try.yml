@@ -16,7 +16,7 @@ jobs:
       run: npm ci
 
     - name: Do data work
-      run: node index.js
+      uses: ./
       with:
         prevInfoPath: './prevContent/try.json'
       id: dataWork
