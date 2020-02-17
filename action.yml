@@ -2,23 +2,21 @@ name: 'Github_Action_Monitor_Webpage'
 description: 'Monitor Webpage defined in config, compare with previous information, output difference.'
 
 inputs:
-  prevInfo:
-    description: String of previous information JSON.
+  prevInfoPath:
+    description: Path of previous information JSON.
     required: true
-    default: ''
+    default: '../prevInfo.json'
 
 outputs:
   changed:
     description: Flag of change or not.
-      #'0' or '1'.
+      #'true' or 'false'.
   title:
     description: Title of difference.
   pureText:
     description: Pure text of difference.
   markdownText:
     description: Markdown format of difference.
-  newInfo:
-    description: JSON of new information. Use this to replace previous information.
 
 runs:
   using: 'node12'
