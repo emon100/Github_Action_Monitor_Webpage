@@ -262,12 +262,11 @@ async function workFlow() {
     //如果有区别发请求，写入
     console.log(`hasDiff: ${diff.hasDiff}`);
     if (diff.hasDiff) {
-        console.log("hasDiff: true");
         let result = oldContent == null ? newContent : Object.assign(oldContent,newContent);
         result.lastUpdated = Date();
 
         let write = writeFile(jsonFile, JSON.stringify(result));
-        let pushResults = await Promisew.allSettled(pushDiff(diff.content));
+        let pushResults = await Promise.allSettled(pushDiff(diff.content));
         let atLeastPushedOne=false;
         for(const pushResult of pushResults){
             if(pushResult.status==="fulfilled"){
@@ -279,12 +278,11 @@ async function workFlow() {
             console.log('至少推送成功一个');
             try{
                 await write;
+                console.log('写入成功');
             }catch (e) {
                 console.log('写入新内容失败');
             }
         }
-
-
     }
     return "Yes";
 }
