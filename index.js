@@ -67,7 +67,15 @@ async function scrapSite(siteName, siteConfig) {
     }
 
     //获得网站
-    let response = await send.Get(siteConfig['siteUrl'], siteConfig['path'], headers, siteConfig['protocol']);//await readFile('aaoneu.html');
+    let response = null;
+    try {
+        response = await send.Get(siteConfig['siteUrl'], siteConfig['path'], headers, siteConfig['protocol']);//await readFile('aaoneu.html');
+    } catch (e) {
+        console.log('scrapSite catch: '+e);
+    }
+    if(response == null){
+        return null;
+    }
 
     let result = {};
 
@@ -114,7 +122,12 @@ async function scrapSite(siteName, siteConfig) {
 async function getNewContent(sitesConfig) {
     let newContent = {};
     const result = Object.keys(sitesConfig).map(siteName => {
-        return scrapSite(siteName, sitesConfig[siteName]);
+        try{
+            return scrapSite(siteName, sitesConfig[siteName]);
+        }catch (e) {
+            console.log('getNewContent catch: '+e);
+        }
+        return null;
     });
 
     for (const scrapPromise of result) {
@@ -124,7 +137,7 @@ async function getNewContent(sitesConfig) {
                 Object.assign(newContent, siteResponse);
             }
         } catch (e) {
-            console.log(e);
+            console.log('scrapPromise catch : ' + e);
         }
     }
     return newContent;
@@ -230,7 +243,7 @@ async function workFlow() {
         let fileResult = await fileReader;
         oldContent = JSON.parse(fileResult.toString());
     } catch (e) {
-        console.log(e);
+        console.log("fileReader catch: "+ e);
     }
 
 

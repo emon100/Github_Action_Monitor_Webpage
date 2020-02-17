@@ -7,6 +7,7 @@ module.exports.Get = function (ip, path, headers, protocol, port) {
         method: 'GET',
         path: path,
         headers: headers,
+        rejectUnauthorized: false,
         timeout: 30000
     };
     if(port != null){
@@ -66,6 +67,7 @@ module.exports.Post = function (data, ip, path, headers, protocol, port) {
         method: 'POST',
         path: path,
         headers: headers,
+        rejectUnauthorized: false,
         timeout: 30000
     };
     if(port != null){
