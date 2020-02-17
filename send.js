@@ -21,7 +21,7 @@ module.exports.Get = function (ip, path, headers, type) {
                     resolve(chunks);
                 } else {
                     // 请求获取不到返回值
-                    resolve("ERROR");
+                    resolve(opt.host+"ERROR");
                 }
             })
         }} ;
@@ -31,7 +31,7 @@ module.exports.Get = function (ip, path, headers, type) {
             method: 'GET',
             path: path,
             headers: headers,
-            timeout: 15000
+            timeout: 30000
         };
 
         let cb = requestCallback(resolve);
@@ -48,7 +48,7 @@ module.exports.Get = function (ip, path, headers, type) {
 
         req.on('error', function (e) {
                 // request请求失败
-                console.log('请求失败: ' + e.message);
+                console.log(opt.host+'请求失败: ' + e.message);
                 reject("0");
          });
         req.end();
@@ -75,7 +75,7 @@ module.exports.Post = function (opt,type,data) {
                     resolve(chunks);
                 } else {
                     // 请求获取不到返回值
-                    resolve("ERROR");
+                    resolve(opt.host+"无返回值ERROR");
                 }
             })
         }};
@@ -87,7 +87,7 @@ module.exports.Post = function (opt,type,data) {
            req = http.request(opt, cb);
             req.on('error', function (e) {
                 // request请求失败
-                console.log('请求失败: ' + e.message);
+                console.log(opt.host+'请求失败: ' + e.message);
                 reject("0");
             });
             req.write(data);
@@ -96,7 +96,7 @@ module.exports.Post = function (opt,type,data) {
            const req = https.request(opt, cb);
             req.on('error', function (e) {
                 // request请求失败
-                console.log('请求失败: ' + e.message);
+                console.log(opt.host+'请求失败: ' + e.message);
                 reject("0");
             });
             req.write(data);

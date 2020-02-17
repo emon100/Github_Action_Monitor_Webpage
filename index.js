@@ -91,7 +91,7 @@ function writeFile(src, string) {
 
 
 //得到网站设置
-async function getSitesConfig() {
+function getSitesConfig() {
     return sitesConfig;
 }
 
@@ -107,9 +107,8 @@ function putNewsIntoContentObj(obj, part, news) {
 async function scrapSite(siteName, siteConfig) {
 
     console.log('Now processing ' + siteName);
-    if (siteConfig === undefined || siteConfig == null) {
+    if (siteConfig == null) {
         throw siteName + " config not exist";
-        //return undefined;
     }
 
     //获得网站
@@ -143,19 +142,19 @@ async function scrapSite(siteName, siteConfig) {
 async function getNewContent(sitesConfig) {
     let newContent = {};
     const result = Object.keys(sitesConfig).map(async siteName => {
+        let siteResponse;
         try {
-            return await scrapSite(siteName, sitesConfig[siteName]);
+            siteResponse = await scrapSite(siteName, sitesConfig[siteName]);
         } catch (e) {
             console.log(e);
-            return undefined;
+            siteResponse = null;
         }
+        return siteResponse;
     });
-
 
     for (const v of result) {
         let temp = await v;
         if (temp != null) {
-            console.log("temp " + JSON.stringify(temp));
             Object.assign(newContent, temp);
         }
     }
@@ -190,11 +189,14 @@ function diffContent(newObj, oldObj) {
     return result;
 }
 
+
+function pushDiff(diff) {
+    return [pushToWeChat(diff)];
+}
+
 //用server酱推送到wechat
-function pushToWechat(diff) {
-    const diffSites = Object.keys(diff).filter((v) => {
-        return v !== 'lastUpdated'
-    });
+function pushToWeChat(diff){
+    const diffSites = Object.keys(diff);
 
     let text = `${diffSites[0]} ${diffSites.length > 2 ? '等' : ''} 有变化了`;
     let desp = '### 改变如下: \n';
@@ -219,9 +221,12 @@ function pushToWechat(diff) {
         host: 'sc.ftqq.com',
         method: 'POST',
         path: `/${SCKEY}.send`,
+        timeout: 30000
     };
     return send.Post(opt, 'https', postData);
 }
+
+
 
 //流水线：得到内容 -> 与之前内容对比 -> 有变化发请求 -> 写入文件
 
@@ -229,39 +234,57 @@ async function workFlow() {
     let fileReader = readFile(jsonFile);
 
     //得到配置信息
-    const sitesConfig = await getSitesConfig();
+    const sitesConfig = getSitesConfig();
+    console.log('Get Sites Config');
     //得到每个网站的内容
     let newContent = await getNewContent(sitesConfig);
+    console.log('Get content of each site, put into new Content');
     console.log(JSON.stringify(newContent));
 
-    console.log('ok');
 
-
-    //异步读取文件
-
+    //异步读取json文件
     let oldContent = null;
+    console.log('try reading oldContent');
     try {
         let fileResult = await fileReader;
         oldContent = await JSON.parse(fileResult.toString());
+
     } catch (e) {
         console.log(e);
     }
 
 
-    //对比
-    newContent.lastUpdated = oldContent ? oldContent['lastUpdated'] : Date();
+    //对比，获得diff对象
     let diff = diffContent(newContent, oldContent);
-    console.log(JSON.stringify(diff));
+    console.log('diff: '+JSON.stringify(diff));
 
 
     //如果有区别发请求，写入
+    console.log(`hasDiff: ${diff.hasDiff}`);
     if (diff.hasDiff) {
-        newContent.lastUpdated = Date();
-        console.log("hasDiff");
-        let push = pushToWechat(diff.content);
-        let write = writeFile(jsonFile, JSON.stringify(newContent));
-        await write;
-        await push;
+        console.log("hasDiff: true");
+        let result = oldContent == null ? newContent : Object.assign(oldContent,newContent);
+        result.lastUpdated = Date();
+
+        let write = writeFile(jsonFile, JSON.stringify(result));
+        let pushResults = await Promisew.allSettled(pushDiff(diff.content));
+        let atLeastPushedOne=false;
+        for(const pushResult of pushResults){
+            if(pushResult.status==="fulfilled"){
+                atLeastPushedOne=true;
+                break;
+            }
+        }
+        if(atLeastPushedOne){
+            console.log('至少推送成功一个');
+            try{
+                await write;
+            }catch (e) {
+                console.log('写入新内容失败');
+            }
+        }
+
+
     }
     return "Yes";
 }
