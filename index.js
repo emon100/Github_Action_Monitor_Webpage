@@ -9,13 +9,13 @@ const cheerio = require('cheerio');
 const core = require('@actions/core');
 const fs = require('fs');
 const send = require('./send');
-const config = require('./config/config');//TODO
+const config = require(core.getInput('configPath'));
 
 const headers = config.headers;
 
-//const jsonFile = './prevContent/try.json';//TODO
+//const jsonFile = './prevContent/try.json';
 
-//const SCKEYS = [process.env.SCKEY];//TODO
+//const SCKEYS = [process.env.SCKEY];
 //console.log(SCKEYS);
 
 
