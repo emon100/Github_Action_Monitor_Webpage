@@ -19,7 +19,7 @@ jobs:
       uses: ./
       with:
         prevInfoPath: './prevContent/try.json'
-        configPath: './config'
+        configPath: './config/config'
       id: dataWork
 
     - name: Check Output
