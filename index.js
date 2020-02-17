@@ -6,62 +6,19 @@
 //原理：
 //流水线 workflow：得到内容 -> 与之前内容对比 -> 有变化发请求
 const cheerio = require('cheerio');
+const core = require('@actions/core');
 const fs = require('fs');
 const send = require('./send');
 const querystring = require('querystring');
+const config = require('./config/config');
 
-const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.106 Safari/537.36'
-};
+const headers = config.headers;
 
 const jsonFile = './prevContent/try.json';
 
-const SCKEY = process.env.SCKEY;
+const SCKEYS = [process.env.SCKEY];
+console.log(SCKEYS);
 
-
-const sitesConfig = {
-    '东大创新网': {
-        type: "http",
-        siteUrl: "cxzx.neu.edu.cn",
-        path: "/main.htm",
-        parts: {
-            '通知公告': {
-                selector: ['#tzlist li:first-child div']
-            }
-        }
-    },
-    '计算机学院官网': {
-        type: "http",
-        siteUrl: "www.cse.neu.edu.cn",
-        path: '/',
-        parts: {
-            '通知公告': {
-                processor: function ($) {
-                    let result = $('[frag="窗口76"] .con .news_list li:first-child span a').text() + ' ';
-                    result += $('[frag="窗口76"] .con .news_list li:first-child span:last-child').text();
-                    return result;
-                }
-            }
-        }
-    },
-    '东大教务处官网': {
-        type: "http",
-        siteUrl: "aao.neu.edu.cn",
-        path: "/",
-        parts: {
-            '通知': {
-                selector: ['[frag="窗口51"] div:first-child+div span font']
-            },
-            '公告': {
-                selector: ['[frag="窗口6"] div:first-child+div']
-            },
-            '教学研究': {
-                selector: ['[frag="窗口9"] li:first-child']
-            }
-            //'素质教育'
-        }
-    }
-};
 
 
 //读文件工具
@@ -89,13 +46,11 @@ function writeFile(src, string) {
     });
 }
 
-
 //得到网站设置
 function getSitesConfig() {
-    return sitesConfig;
+    return config.config;
 }
 
-//
 function putNewsIntoContentObj(obj, part, news) {
     if (!obj[part]) {
         obj[part] = {};
@@ -103,6 +58,7 @@ function putNewsIntoContentObj(obj, part, news) {
     obj[part]['latestNews'] = news;
 }
 
+//抓取单个站点
 async function scrapSite(siteName, siteConfig) {
 
     console.log('Now processing ' + siteName);
@@ -138,27 +94,26 @@ async function scrapSite(siteName, siteConfig) {
     return result;
 }
 
+//批量抓取站点
 async function getNewContent(sitesConfig) {
     let newContent = {};
-    const result = Object.keys(sitesConfig).map(async siteName => {
-        let siteResponse;
-        try {
-            siteResponse = await scrapSite(siteName, sitesConfig[siteName]);
-        } catch (e) {
-            console.log(e);
-            siteResponse = null;
-        }
-        return siteResponse;
+    const result = Object.keys(sitesConfig).map(siteName => {
+        return scrapSite(siteName, sitesConfig[siteName]);
     });
 
-    for (const v of result) {
-        let temp = await v;
-        if (temp != null) {
-            Object.assign(newContent, temp);
+    for (const scrapPromise of result) {
+        try {
+            let siteResponse = await scrapPromise;
+            if (siteResponse != null) {
+                Object.assign(newContent, siteResponse);
+            }
+        } catch (e) {
+            console.log(e);
         }
     }
     return newContent;
 }
+
 
 function diffContent(newObj, oldObj) {
     let result = {hasDiff: false, content: {}};
@@ -188,28 +143,12 @@ function diffContent(newObj, oldObj) {
     return result;
 }
 
-
-function pushDiff(diff) {
-    return [pushToWeChat(diff)];
-}
-
 //用server酱推送到wechat
-function pushToWeChat(diff){
-    const diffSites = Object.keys(diff);
+function pushToWeChat(message,SCKEY){
 
-    let text = `${diffSites[0]} ${diffSites.length > 2 ? '等' : ''} 有变化了`;
-    let desp = '### 改变如下: \n';
-    for (const site of diffSites) {
-        desp += `#### ${site}:\n`;
-        for (const part of Object.keys(diff[site])) {
-            desp += `##### ${part}:\n\t${diff[site][part]['latestNews']}\n`;
-        }
-    }
-    console.log(text);
-    console.log(desp);
     let postData = querystring.stringify({
-        'text': text,
-        'desp': desp
+        text: message.text,
+        desp: message.desp
     });
 
     const opt = {
@@ -225,9 +164,38 @@ function pushToWeChat(diff){
     return send.Post(opt, 'https', postData);
 }
 
+function createWeChatMessage(diff) {
+    const diffSites = Object.keys(diff);
+
+    let text = `${diffSites[0]} ${diffSites.length > 1 ? '等' : ''} 有变化了`;
+    let desp = '### 改变如下: \n';
+    for (const site of diffSites) {
+        desp += `#### ${site}:\n`;
+        for (const part of Object.keys(diff[site])) {
+            desp += `##### ${part}:\n\t${diff[site][part]['latestNews']}\n`;
+        }
+    }
+    return {text:text,desp:desp};
+}
 
 
-//流水线：得到内容 -> 与之前内容对比 -> 有变化发请求 -> 写入文件
+//对diff进行推送
+function pushDiff(diff) {
+
+    let result = [];
+    if(SCKEYS.length>0){
+        let message = createWeChatMessage(diff);
+        console.log(message.text);
+        console.log(message.desp);
+        for (const SCKEY of SCKEYS){
+            result.push(pushToWeChat(message,SCKEY))
+        }
+    }
+    return result;
+}
+
+
+//流水线：得到内容 -> 与之前内容对比 -> 写入文件 -> 有变化发请求
 
 async function workFlow() {
     let fileReader = readFile(jsonFile);
@@ -247,7 +215,6 @@ async function workFlow() {
     try {
         let fileResult = await fileReader;
         oldContent = await JSON.parse(fileResult.toString());
-
     } catch (e) {
         console.log(e);
     }
@@ -258,19 +225,25 @@ async function workFlow() {
     console.log('diff: '+JSON.stringify(diff));
 
 
-    //如果有区别发请求，写入
+    //如果有区别，通知外界，让外界写入
     console.log(`hasDiff: ${diff.hasDiff}`);
     if (diff.hasDiff) {
+
         let result = oldContent == null ? newContent : Object.assign(oldContent,newContent);
         result.lastUpdated = Date();
 
-        let write = writeFile(jsonFile, JSON.stringify(result));
+        //let write = writeFile(jsonFile, JSON.stringify(result));
+
+        /*
         let pushResults = await Promise.allSettled(pushDiff(diff.content));
         let atLeastPushedOne=false;
         for(const pushResult of pushResults){
             if(pushResult.status==="fulfilled"){
                 atLeastPushedOne=true;
                 break;
+            }
+            else {
+                console.log(pushResults.reason);
             }
         }
         if(atLeastPushedOne){
@@ -282,6 +255,8 @@ async function workFlow() {
                 console.log('写入新内容失败');
             }
         }
+        */
+
     }
     return "Yes";
 }
