@@ -12,9 +12,6 @@ jobs:
     - name: Checkout this repo
       uses: actions/checkout@master
 
-    - name: npm install
-      run: npm ci
-
     - name: Do data work
       uses: ./
       with:
