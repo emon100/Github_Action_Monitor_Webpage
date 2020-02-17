@@ -57,8 +57,8 @@ const sitesConfig = {
             '第一个':{
                 processor: function (obj) {
                     let result;
-                    if(obj != null&&obj.Code===0){
-                      result = `${obj['Data']['data'][0]['Title']} : ${obj['Data']['data'][0]['Desc']}`;
+                    if(obj != null && obj.Code===0){
+                      result = `${ unescape(obj['Data']['data'][0]['Title']) } : ${ unescape(obj['Data']['data'][0]['Desc']) }`;
                     }else {
                         result = 'api访问错误';
                     }

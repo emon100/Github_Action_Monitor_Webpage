@@ -100,6 +100,7 @@ async function scrapSite(siteName, siteConfig) {
             }
         }
     }else if (siteConfig['type']==='api'){
+        response = JSON.parse(response.toString());
         let thisSiteContent = result[siteName] = {};
         for (const part of Object.keys(siteConfig['parts'])) {
             //遍历每个设置，得到各部分最新信息
