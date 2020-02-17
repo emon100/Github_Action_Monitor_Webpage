@@ -1,8 +1,19 @@
 const http = require('http');
 const https = require('https');
 
-module.exports.Get = function (ip, path, headers, type) {
-    var requestCallback = (resolve)=>{
+module.exports.Get = function (ip, path, headers, protocol, port) {
+    const opt = {
+        host: ip,  // 这里是ip(192.168.1.1)或者域名(mydomain.com)，注意不能带http://或https://
+        method: 'GET',
+        path: path,
+        headers: headers,
+        timeout: 30000
+    };
+    if(port != null){
+        opt.port = port;
+    }
+
+    let requestCallback = (resolve)=>{
         return (result)=>{
             const encoding = result.headers['content-encoding'];
             if( encoding === 'undefined'){
@@ -26,21 +37,14 @@ module.exports.Get = function (ip, path, headers, type) {
             })
         }} ;
     return new Promise((resolve, reject) => {
-        const opt = {
-            host: ip,  // 这里是ip(192.168.1.1)或者域名(mydomain.com)，注意不能带http://或https://
-            method: 'GET',
-            path: path,
-            headers: headers,
-            timeout: 30000
-        };
 
         let cb = requestCallback(resolve);
 
         let req;
 
-        if (type === "https") {
+        if (protocol === "https") {
             req = https.request(opt, cb);
-        }else if (type === "http") {
+        }else if (protocol === "http") {
             req = http.request(opt, cb);
         }else {
             reject('5');
@@ -56,8 +60,19 @@ module.exports.Get = function (ip, path, headers, type) {
 
 };
 
-module.exports.Post = function (opt,type,data) {
-    var requestCallback = (resolve)=>{
+module.exports.Post = function (data, ip, path, headers, protocol, port) {
+    const opt = {
+        host: ip,  // 这里是ip(192.168.1.1)或者域名(mydomain.com)，注意不能带http://或https://
+        method: 'POST',
+        path: path,
+        headers: headers,
+        timeout: 30000
+    };
+    if(port != null){
+        opt.port = port;
+    }
+
+    let requestCallback = (resolve)=>{
         return (result)=>{
             const encoding = result.headers['content-encoding'];
             if( encoding === 'undefined'){
@@ -83,7 +98,7 @@ module.exports.Post = function (opt,type,data) {
     return new Promise((resolve, reject) => {
         let cb = requestCallback(resolve);
         let req;
-        if (type === "http") {
+        if (protocol === "http") {
            req = http.request(opt, cb);
             req.on('error', function (e) {
                 // request请求失败
@@ -92,7 +107,7 @@ module.exports.Post = function (opt,type,data) {
             });
             req.write(data);
             req.end();
-        } else if (type === "https") {
+        } else if (protocol === "https") {
            const req = https.request(opt, cb);
             req.on('error', function (e) {
                 // request请求失败

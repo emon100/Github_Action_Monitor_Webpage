@@ -67,28 +67,44 @@ async function scrapSite(siteName, siteConfig) {
     }
 
     //获得网站
-    let response = await send.Get(siteConfig['siteUrl'], siteConfig['path'], headers, siteConfig['type']);//await readFile('aaoneu.html');
-
-    //解析html
-    let $ = cheerio.load(response);
+    let response = await send.Get(siteConfig['siteUrl'], siteConfig['path'], headers, siteConfig['protocol']);//await readFile('aaoneu.html');
 
     let result = {};
-    let thisSiteContent = result[siteName] = {};
 
-    for (const part of Object.keys(siteConfig['parts'])) {
-        //遍历每个设置，得到各部分最新信息
-        console.log(part);
-        let selector = siteConfig['parts'][part]['selector'];
-        let processor = siteConfig['parts'][part]['processor'];
-        if (selector != null) {
-            let latestNews = $(...selector).text();
-            console.log("消息: " + latestNews);//得到了！
-            putNewsIntoContentObj(thisSiteContent, part, latestNews);
-        } else if (processor != null) {
-            let latestNews = processor($);
-            console.log(latestNews);
-            putNewsIntoContentObj(thisSiteContent, part, latestNews);
+    //解析html
+    if(siteConfig['type']==="html"){
+        let $ = cheerio.load(response);
+        let thisSiteContent = result[siteName] = {};
+
+        for (const part of Object.keys(siteConfig['parts'])) {
+            //遍历每个设置，得到各部分最新信息
+            console.log(part);
+            let selector = siteConfig['parts'][part]['selector'];
+            let processor = siteConfig['parts'][part]['processor'];
+            if (selector != null) {
+                let latestNews = $(...selector).text();
+                console.log("消息: " + latestNews);//得到了！
+                putNewsIntoContentObj(thisSiteContent, part, latestNews);
+            } else if (processor != null) {
+                let latestNews = processor($);
+                console.log(latestNews);
+                putNewsIntoContentObj(thisSiteContent, part, latestNews);
+            }
         }
+    }else if (siteConfig['type']==='api'){
+        let thisSiteContent = result[siteName] = {};
+        for (const part of Object.keys(siteConfig['parts'])) {
+            //遍历每个设置，得到各部分最新信息
+            console.log(part);
+            let processor = siteConfig['parts'][part]['processor'];
+            if (processor != null) {
+                let latestNews = processor(response);
+                console.log(latestNews);
+                putNewsIntoContentObj(thisSiteContent, part, latestNews);
+            }
+        }
+    }else {
+        throw siteName + 'type is not clear';
     }
 
     return result;
@@ -144,25 +160,19 @@ function diffContent(newObj, oldObj) {
 }
 
 //用server酱推送到wechat
+/*
 function pushToWeChat(message,SCKEY){
-
     let postData = querystring.stringify({
         text: message.text,
         desp: message.desp
     });
 
-    const opt = {
-        headers: {
+    return send.Post(postData,'sc.ftqq.com',`/${SCKEY}.send`, {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Content-Length': Buffer.byteLength(postData)
-        },
-        host: 'sc.ftqq.com',
-        method: 'POST',
-        path: `/${SCKEY}.send`,
-        timeout: 30000
-    };
-    return send.Post(opt, 'https', postData);
+    },'https');
 }
+*/
 
 //利用区别创建信息
 function createMessage(diff) {
@@ -183,6 +193,7 @@ function createMessage(diff) {
 }
 
 //对diff进行推送
+/*
 function pushDiff(diff) {
     let result = [];
     if(SCKEYS.length>0){
@@ -195,7 +206,7 @@ function pushDiff(diff) {
     }
     return result;
 }
-
+*/
 
 //流水线：得到内容 -> 与之前内容对比 -> 写入变量
 
