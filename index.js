@@ -6,7 +6,7 @@
 //原理：
 //流水线 workflow：得到内容 -> 与之前内容对比 -> 有变化发请求
 const cheerio = require('cheerio');
-import * as core from '@actions/core';
+const core = require('@actions/core');
 const fs = require('fs');
 const send = require('./send');
 const querystring = require('querystring');
