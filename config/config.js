@@ -4,7 +4,8 @@ const headers = {
 
 const sitesConfig = {
     '东大创新网': {
-        type: "http",
+        type: "html",
+        protocol: "http",
         siteUrl: "cxzx.neu.edu.cn",
         path: "/main.htm",
         parts: {
@@ -14,7 +15,8 @@ const sitesConfig = {
         }
     },
     '计算机学院官网': {
-        type: "http",
+        type: "html",
+        protocol: "http",
         siteUrl: "www.cse.neu.edu.cn",
         path: '/',
         parts: {
@@ -28,7 +30,8 @@ const sitesConfig = {
         }
     },
     '东大教务处官网': {
-        type: "http",
+        type: "html",
+        protocol: "http",
         siteUrl: "aao.neu.edu.cn",
         path: "/",
         parts: {
@@ -42,6 +45,26 @@ const sitesConfig = {
                 selector: ['[frag="窗口9"] li:first-child']
             }
             //'素质教育'
+        }
+    },
+    '热榜':{
+        type:'api',
+        protocol:'https',
+        siteUrl:'www.tophub.fun',
+        port: 8888,
+        path:'/v2/GetAllInfoGzip?id=1&page=0',
+        parts:{
+            '第一个':{
+                processor: function (obj) {
+                    let result;
+                    if(obj&&obj.Code){
+                      result = `${obj['Data']['data'][0]['Title']} : ${obj['Data']['data'][0]['Desc']}`;
+                    }else {
+                        result = 'api访问错误';
+                    }
+                    return result;
+                }
+            }
         }
     }
 };
