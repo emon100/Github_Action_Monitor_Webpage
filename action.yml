@@ -6,6 +6,10 @@ inputs:
     description: Path of previous information JSON.
     required: true
     default: '../prevInfo.json'
+  configPath:
+    description: Path of config.
+    required: false
+    default: '../config'
 
 outputs:
   changed:
