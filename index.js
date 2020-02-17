@@ -6,7 +6,7 @@
 //原理：
 //流水线 workflow：得到内容 -> 与之前内容对比 -> 有变化发请求
 const cheerio = require('cheerio');
-const core = require('@actions/core');
+import * as core from '@actions/core';
 const fs = require('fs');
 const send = require('./send');
 const querystring = require('querystring');
@@ -32,7 +32,7 @@ function readFile(src) {
             }
         });
     });
-}//TODO
+}
 
 //写文件工具
 function writeFile(src, string) {
@@ -44,7 +44,7 @@ function writeFile(src, string) {
             resolve(data);
         });
     });
-}//TODO
+}
 
 //得到网站设置
 function getSitesConfig() {

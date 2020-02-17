@@ -25,7 +25,7 @@ jobs:
       run: echo ${{ steps.dataWork.outputs.changed }}
 
     - name: Check Output
-      if: steps.dataWork.changed
+      if: steps.dataWork.changed == 'true'
       run: echo ${{ steps.dataWork.outputs.title }}
 
     - name: Get date
