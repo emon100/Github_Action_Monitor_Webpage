@@ -1,18 +1,13 @@
 const http = require('http');
 const https = require('https');
 
-module.exports.Get = function (ip, path, headers, protocol, port) {
+module.exports.Get = function (host, headers, protocol) {
     const opt = {
-        host: ip,  // 这里是ip(192.168.1.1)或者域名(mydomain.com)，注意不能带http://或https://
         method: 'GET',
-        path: path,
         headers: headers,
         rejectUnauthorized: false,
         timeout: 30000
     };
-    if(port != null){
-        opt.port = port;
-    }
 
     let requestCallback = (resolve)=>{
         return (result)=>{
@@ -44,9 +39,9 @@ module.exports.Get = function (ip, path, headers, protocol, port) {
         let req;
 
         if (protocol === "https") {
-            req = https.request(opt, cb);
+            req = https.request(host,opt, cb);
         }else if (protocol === "http") {
-            req = http.request(opt, cb);
+            req = http.request(host,opt, cb);
         }else {
             reject('5');
         }
@@ -61,18 +56,13 @@ module.exports.Get = function (ip, path, headers, protocol, port) {
 
 };
 
-module.exports.Post = function (data, ip, path, headers, protocol, port) {
+module.exports.Post = function (data, host, headers, protocol) {
     const opt = {
-        host: ip,  // 这里是ip(192.168.1.1)或者域名(mydomain.com)，注意不能带http://或https://
         method: 'POST',
-        path: path,
         headers: headers,
         rejectUnauthorized: false,
         timeout: 30000
     };
-    if(port != null){
-        opt.port = port;
-    }
 
     let requestCallback = (resolve)=>{
         return (result)=>{
@@ -101,7 +91,7 @@ module.exports.Post = function (data, ip, path, headers, protocol, port) {
         let cb = requestCallback(resolve);
         let req;
         if (protocol === "http") {
-           req = http.request(opt, cb);
+           req = http.request(host, opt, cb);
             req.on('error', function (e) {
                 // request请求失败
                 console.log(opt.host+'请求失败: ' + e.message);
@@ -110,7 +100,7 @@ module.exports.Post = function (data, ip, path, headers, protocol, port) {
             req.write(data);
             req.end();
         } else if (protocol === "https") {
-           const req = https.request(opt, cb);
+           const req = https.request(host, opt, cb);
             req.on('error', function (e) {
                 // request请求失败
                 console.log(opt.host+'请求失败: ' + e.message);

@@ -6,8 +6,7 @@ const sitesConfig = {
     '东大创新网': {
         type: "html",
         protocol: "http",
-        siteUrl: "cxzx.neu.edu.cn",
-        path: "/main.htm",
+        siteHost: "http://cxzx.neu.edu.cn/",
         parts: {
             '通知公告': {
                 selector: ['#tzlist li:first-child div']
@@ -17,8 +16,7 @@ const sitesConfig = {
     '计算机学院官网': {
         type: "html",
         protocol: "http",
-        siteUrl: "www.cse.neu.edu.cn",
-        path: '/',
+        siteHost: "http://www.cse.neu.edu.cn/",
         parts: {
             '通知公告': {
                 processor: function ($) {
@@ -32,8 +30,7 @@ const sitesConfig = {
     '东大教务处官网': {
         type: "html",
         protocol: "http",
-        siteUrl: "aao.neu.edu.cn",
-        path: "/",
+        siteHost: "http://aao.neu.edu.cn/",
         parts: {
             '通知': {
                 selector: ['[frag="窗口51"] div:first-child+div span font']
@@ -48,17 +45,15 @@ const sitesConfig = {
         }
     },
     '热榜':{
-        type:'api',
+        type:'json',
         protocol:'https',
-        siteUrl:'www.tophub.fun',
-        port: 8888,
-        path:'/v2/GetAllInfoGzip?id=1&page=0',
+        siteHost:'https://www.tophub.fun:8888/v2/GetAllInfoGzip?id=59&page=0',
         parts:{
             '第一个':{
                 processor: function (obj) {
                     let result;
                     if(obj != null && obj.Code===0){
-                      result = `${ unescape(obj['Data']['data'][0]['Title']) } : ${ unescape(obj['Data']['data'][0]['Desc']) }`;
+                      result = `${ unescape(obj['Data']['data'][0]['Title']) } : ${ unescape(obj['Data']['data'][0]['hotDesc']) }`;
                     }else {
                         result = 'api访问错误';
                     }
