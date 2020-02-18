@@ -54,7 +54,7 @@
 
 ## 配置方法
 
-只需用JS写出一个配置文件即可。不完全的例子：
+只需用JS写出一个配置文件即可，此项目里有一个[完整例子](https://github.com/emon100/Github_Action_Monitor_Webpage/blob/master/config/config.js)。以下是个不完全的例子：
 ```javascript
 const sitesConfig = {
     '东大教务处官网': {
