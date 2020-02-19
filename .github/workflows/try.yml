@@ -46,4 +46,6 @@ jobs:
       uses: EndBug/add-and-commit@v3.0.0
       with:
        message: ${{ env.REPORT_DATE }}
-
+      env:
+      # This is necessary in order to push a commit to the repo
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
