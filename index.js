@@ -120,19 +120,20 @@ async function scrapSite(siteName, siteConfig) {
 //批量抓取站点
 async function getNewContent(sitesConfig) {
     let newContent = {};
-    const results = Object.keys(sitesConfig).map(async siteName => {
+    const results = Object.keys(sitesConfig).map(siteName => {
         try{
-            return await scrapSite(siteName, sitesConfig[siteName]);
+            return scrapSite(siteName, sitesConfig[siteName]);
         }catch (e) {
             console.log('getNewContent catch: '+e);
         }
         return null;
     });
 
-    results.forEach(result=>{
+    results.map(async result=>{
         try {
-            if (result != null) {
-                Object.assign(newContent, result);
+            let siteResponse = await result;
+            if (siteResponse != null) {
+                Object.assign(newContent, siteResponse);
             }
         } catch (e) {
             console.log('result catch : ' + e);
