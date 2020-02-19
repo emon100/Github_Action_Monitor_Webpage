@@ -43,7 +43,7 @@ jobs:
       #  commit_message: ${{ env.REPORT_DATE }}
         
     - name: Add & Commit
-      uses: EndBug/add-and-commit@a2b4938
+      uses: EndBug/add-and-commit@v3.0.0
       with:
        message: ${{ env.REPORT_DATE }}
 
