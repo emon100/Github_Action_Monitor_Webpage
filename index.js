@@ -21,7 +21,7 @@ const headers = config.headers;
 
 
 //读文件工具
-function readFile(src) {
+async function readFile(src) {
     return new Promise((resolve, reject) => {
         fs.readFile(src, (err, data) => {
             if (err) {
@@ -30,7 +30,7 @@ function readFile(src) {
                 resolve(data);
             }
         });
-    });
+    })
 }
 
 //写文件工具

@@ -15,8 +15,8 @@ jobs:
     - name: Do data work
       uses: ./
       with:
-        prevInfoPath: './prevContent/try.json'
-        configPath: './config/config'
+        prevInfoPath: './test/prevContent/try.json'
+        configPath: './test/config/config'
       id: dataWork
 
     - name: Check Output
@@ -29,11 +29,11 @@ jobs:
     - name: Get date
       run: echo "::set-env name=REPORT_DATE::$(TZ=':Asia/Shanghai' date '+%Y-%m-%d %T')"
 
-    - name: Git Auto Commit
-      uses: stefanzweifel/git-auto-commit-action@v3.0.0
-      with:
+    #- name: Git Auto Commit
+    #  uses: stefanzweifel/git-auto-commit-action@v3.0.0
+     # with:
     # Commit message
-        commit_message: ${{ env.REPORT_DATE }}
+      #  commit_message: ${{ env.REPORT_DATE }}
 
 
 

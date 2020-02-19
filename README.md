@@ -1,6 +1,6 @@
 # Github_Action_Monitor_Webpage 
 
-一个通用化，提取网页信息与JSON信息，与之前提取的版本对比，输出差异的工具。
+一个通用化，提取网页html信息与api的JSON信息，与之前提取的版本对比，输出差异的action。
 
 ## 输入
 
