@@ -59,7 +59,6 @@ function putNewsIntoContentObj(obj, part, news) {
 
 //抓取单个站点
 async function scrapSite(siteName, siteConfig) {
-
     console.log('Now processing ' + siteName);
     if (siteConfig == null) {
         throw siteName + " config not exist";
@@ -108,7 +107,6 @@ async function scrapSite(siteName, siteConfig) {
             let processor = siteConfig['parts'][part]['processor'];
             if (processor != null) {
                 let latestNews = processor(response);
-                console.log(latestNews);
                 putNewsIntoContentObj(thisSiteContent, part, latestNews);
             }
         }
@@ -122,25 +120,24 @@ async function scrapSite(siteName, siteConfig) {
 //批量抓取站点
 async function getNewContent(sitesConfig) {
     let newContent = {};
-    const result = Object.keys(sitesConfig).map(siteName => {
+    const results = Object.keys(sitesConfig).map(async siteName => {
         try{
-            return scrapSite(siteName, sitesConfig[siteName]);
+            return await scrapSite(siteName, sitesConfig[siteName]);
         }catch (e) {
             console.log('getNewContent catch: '+e);
         }
         return null;
     });
 
-    for (const scrapPromise of result) {
+    results.forEach(result=>{
         try {
-            let siteResponse = await scrapPromise;
-            if (siteResponse != null) {
-                Object.assign(newContent, siteResponse);
+            if (result != null) {
+                Object.assign(newContent, result);
             }
         } catch (e) {
-            console.log('scrapPromise catch : ' + e);
+            console.log('result catch : ' + e);
         }
-    }
+    });
     return newContent;
 }
 
