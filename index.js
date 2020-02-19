@@ -34,7 +34,7 @@ async function readFile(src) {
 }
 
 //写文件工具
-function writeFile(src, string) {
+async function writeFile(src, string) {
     return new Promise((resolve, reject) => {
         fs.writeFile(src, string, (err, data) => {
             if (err) {
@@ -129,7 +129,7 @@ async function getNewContent(sitesConfig) {
         return null;
     });
 
-    results.map(async result=>{
+    for (const result of results) {
         try {
             let siteResponse = await result;
             if (siteResponse != null) {
@@ -138,7 +138,7 @@ async function getNewContent(sitesConfig) {
         } catch (e) {
             console.log('result catch : ' + e);
         }
-    });
+    }
     return newContent;
 }
 
