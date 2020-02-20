@@ -67,6 +67,7 @@ const sitesConfig = {
                         method: 'POST',
                         headers: newHeaders,
                         rejectUnauthorized: false,
+                        timeout: 30000
                     },
                     res1 => {
                         //第一步
@@ -90,13 +91,13 @@ const sitesConfig = {
                                 method: 'POST',
                                 headers: newHeaders,
                                 rejectUnauthorized: false,
+                                timeout: 30000
                             },
                             res2 => {
                                 const encoding = res2.headers['content-encoding'];
                                 if (encoding === 'undefined') {
                                     res2.setEncoding('utf-8');
                                 }
-
 
                                 newHeaders.Cookie = res2.headers["set-cookie"];
 
@@ -107,6 +108,7 @@ const sitesConfig = {
                                         method: 'POST',
                                         headers: newHeaders,
                                         rejectUnauthorized: false,
+                                        timeout: 30000
                                     },
                                     res3 => {
                                         const encoding = res3.headers['content-encoding'];
@@ -119,6 +121,7 @@ const sitesConfig = {
                                         });
 
                                         res3.on('end', () => {
+                                            console.log("BB step3 over");
                                             resolve(json);
                                         });
 
@@ -127,6 +130,10 @@ const sitesConfig = {
                                         })
 
                                     });
+
+                                request3.on("error", err => {
+                                    reject("BB step3 error "+err);
+                                });
                                 request3.write(postData2);
                                 request3.end();
 
@@ -142,16 +149,19 @@ const sitesConfig = {
                         request2.write(postData2);
                         request2.end();
 
+                        request2.on('error', (error) => {
+                            reject('BB: Step2 error '+ error);
+                        });
+
                         res1.on('end', () => {
                             console.log('BB step1 logged in.');
                         });
-                        res1.on('error', () => {
-                            reject('BB: Step1 error');
-                        });
-
                     });
 
                 request1.write(postData1);
+                request1.on('BB: Step1 error '+'error', (e) => {
+                    reject(e);
+                });
                 request1.end();
             });
         },
