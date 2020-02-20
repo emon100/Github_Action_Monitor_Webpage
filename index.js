@@ -10,7 +10,6 @@ const core = require('@actions/core');
 const fs = require('fs');
 const send = require('./send');
 const config = require(core.getInput('configPath'));
-
 const headers = config.headers;
 
 //const jsonFile = './prevContent/try.json';
@@ -67,7 +66,11 @@ async function scrapSite(siteName, siteConfig) {
     //获得网站
     let response = null;
     try {
-        response = await send.Get(siteConfig['siteHost'], headers, siteConfig['protocol']);//await readFile('aaoneu.html');
+        if(siteConfig.getResponse!=null){
+            response = await siteConfig.getResponse();
+        }else{
+            response = await send.Get(siteConfig['siteHost'], headers, siteConfig['protocol']);//await readFile('aaoneu.html');
+        }
     } catch (e) {
         console.log('scrapSite catch: '+e);
     }
@@ -97,7 +100,7 @@ async function scrapSite(siteName, siteConfig) {
                 putNewsIntoContentObj(thisSiteContent, part, latestNews);
             }
         }
-    }else if (siteConfig['type']==='json'){
+    } else if (siteConfig['type']==='json'){//解析json
         console.log(response);
         response = JSON.parse(response);
         let thisSiteContent = result[siteName] = {};
