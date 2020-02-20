@@ -106,10 +106,10 @@ async function scrapSite(siteName, siteConfig) {
         let thisSiteContent = result[siteName] = {};
         for (const part of Object.keys(siteConfig['parts'])) {
             //遍历每个设置，得到各部分最新信息
-            console.log(part);
             let processor = siteConfig['parts'][part]['processor'];
             if (processor != null) {
                 let latestNews = processor(response);
+                console.log(latestNews);
                 putNewsIntoContentObj(thisSiteContent, part, latestNews);
             }
         }
