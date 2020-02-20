@@ -29,7 +29,7 @@ async function readFile(src) {
                 resolve(data);
             }
         });
-    })
+    }).catch(error=>{console.log(error);});
 }
 
 //写文件工具
@@ -41,7 +41,7 @@ async function writeFile(src, string) {
             }
             resolve(data);
         });
-    });
+    }).catch(error=>{console.log(error);});
 }
 
 //得到网站设置
@@ -101,7 +101,6 @@ async function scrapSite(siteName, siteConfig) {
             }
         }
     } else if (siteConfig['type']==='json'){//解析json
-        console.log(response);
         response = JSON.parse(response);
         let thisSiteContent = result[siteName] = {};
         for (const part of Object.keys(siteConfig['parts'])) {
@@ -227,7 +226,6 @@ function pushDiff(diff) {
 
 async function workFlow() {
     const prevInfoPath = core.getInput('prevInfoPath',{ required: true });
-    let fileReader = readFile(prevInfoPath);
 
     //得到配置信息
     const sitesConfig = getSitesConfig();
@@ -242,7 +240,7 @@ async function workFlow() {
     let oldContent = null;
     console.log('try reading oldContent');
     try {
-        let fileResult = await fileReader;
+        let fileResult = await readFile(prevInfoPath);
         oldContent = JSON.parse(fileResult.toString());
     } catch (e) {
         console.log("fileReader catch: "+ e);
