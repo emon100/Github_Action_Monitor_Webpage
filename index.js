@@ -5,12 +5,15 @@
 //
 //原理：
 //流水线 workflow：得到内容 -> 与之前内容对比 -> 有变化发请求
-const cheerio = require('cheerio');
+const arrDiff = require('arr-diff');
+const util = require('util');
 const core = require('@actions/core');
 const fs = require('fs');
-const send = require('./send');
+const request = require('superagent');
 const config = require(core.getInput('configPath'));
 const headers = config.headers;
+const jsdom = require('jsdom');
+const { JSDOM } = jsdom;
 
 //const jsonFile = './prevContent/try.json';
 
@@ -18,42 +21,53 @@ const headers = config.headers;
 //console.log(SCKEYS);
 
 
-
 //读文件工具
-async function readFile(src) {
-    return new Promise((resolve, reject) => {
-        fs.readFile(src, (err, data) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(data);
-            }
-        });
-    }).catch(error=>{console.log(error);});
-}
+let readFile = util.promisify(fs.readFile);
 
 //写文件工具
-async function writeFile(src, string) {
-    return new Promise((resolve, reject) => {
-        fs.writeFile(src, string, (err, data) => {
-            if (err) {
-                reject('File read error');
-            }
-            resolve(data);
-        });
-    }).catch(error=>{console.log(error);});
-}
+let writeFile = util.promisify(fs.writeFile);
+
 
 //得到网站设置
 function getSitesConfig() {
     return config.config;
 }
 
-function putNewsIntoContentObj(obj, part, news) {
-    if (!obj[part]) {
-        obj[part] = {};
+//制作新内容对象
+function putNewContentsIntoObj(siteConfig, data, thisSiteContent) {
+    function putNewsIntoContentObj(obj, part, news) {
+        if (!obj[part]) {
+            obj[part] = {};
+        }
+        obj[part]['latestNews'] = news;
     }
-    obj[part]['latestNews'] = news;
+    for (const part of Object.keys(siteConfig['parts'])) {
+        //遍历每个设置，得到各部分最新信息
+        console.log(part);
+        let selector = siteConfig['parts'][part]['selector'];
+        let processor = siteConfig['parts'][part]['processor'];
+        if (selector != null) {
+            try {
+                let newsNodes = data.window.document.querySelectorAll(selector);
+                let latestNews =[];
+                    for (const v of newsNodes) {
+                    latestNews.push(v.textContent);
+                }
+                console.log("消息: " + latestNews);//得到了！
+                putNewsIntoContentObj(thisSiteContent, part, latestNews);
+            } catch (e) {
+                console.log(`${part} : ${e}`);
+            }
+        } else if (processor != null) {
+            try {
+                let latestNews = processor(data);
+                console.log("消息: " + latestNews);//得到了！
+                putNewsIntoContentObj(thisSiteContent, part, latestNews);
+            } catch (e) {
+                console.log(`${part} : ${e}`);
+            }
+        }
+    }
 }
 
 //抓取单个站点
@@ -63,59 +77,37 @@ async function scrapSite(siteName, siteConfig) {
         throw siteName + " config not exist";
     }
 
-    //获得网站
+    //获得网站response
     let response = null;
     try {
-        if(siteConfig.getResponse!=null){
-            response = await siteConfig.getResponse();
-        }else{
-            response = await send.Get(siteConfig['siteHost'], headers, siteConfig['protocol']);//await readFile('aaoneu.html');
+        if (siteConfig["getResponse"] != null) {
+            response = await siteConfig["getResponse"]();
+        } else {
+            response = await request
+                .get(siteConfig['siteURL'])
+                .set(headers);//await readFile('aaoneu.html');
+            response = response.text;
         }
     } catch (e) {
-        console.log('scrapSite catch: '+e);
+        console.log('scrapSite catch: ' + e);
     }
-    if(response == null){
+    if (response == null) {
         return null;
     }
 
     let result = {};
+    result[siteName] = {};
 
-    //解析html
-    if(siteConfig['type']==="html"){
-        let $ = cheerio.load(response);
-        let thisSiteContent = result[siteName] = {};
-
-        for (const part of Object.keys(siteConfig['parts'])) {
-            //遍历每个设置，得到各部分最新信息
-            console.log(part);
-            let selector = siteConfig['parts'][part]['selector'];
-            let processor = siteConfig['parts'][part]['processor'];
-            if (selector != null) {
-                let latestNews = $(...selector).text();
-                console.log("消息: " + latestNews);//得到了！
-                putNewsIntoContentObj(thisSiteContent, part, latestNews);
-            } else if (processor != null) {
-                let latestNews = processor($);
-                console.log(latestNews);
-                putNewsIntoContentObj(thisSiteContent, part, latestNews);
-            }
-        }
-    } else if (siteConfig['type']==='json'){//解析json
-        response = JSON.parse(response);
-        let thisSiteContent = result[siteName] = {};
-        for (const part of Object.keys(siteConfig['parts'])) {
-            //遍历每个设置，得到各部分最新信息
-            let processor = siteConfig['parts'][part]['processor'];
-            if (processor != null) {
-                let latestNews = processor(response);
-                console.log(latestNews);
-                putNewsIntoContentObj(thisSiteContent, part, latestNews);
-            }
-        }
-    }else {
+    let obj;
+    if (siteConfig['type'] === "html") {    //解析html
+        obj =  new JSDOM(response.toString());
+    } else if (siteConfig['type'] === 'json') {//解析json
+        obj = JSON.parse(response);
+    } else {
         throw siteName + 'type is not clear';
     }
 
+    putNewContentsIntoObj(siteConfig, obj, result[siteName]);
     return result;
 }
 
@@ -123,10 +115,10 @@ async function scrapSite(siteName, siteConfig) {
 async function getNewContent(sitesConfig) {
     let newContent = {};
     const results = Object.keys(sitesConfig).map(async siteName => {
-        try{
+        try {
             return await scrapSite(siteName, sitesConfig[siteName]);
-        }catch (e) {
-            console.log('getNewContent catch: '+e);
+        } catch (e) {
+            console.log('getNewContent catch: ' + e);
         }
         return null;
     });
@@ -161,11 +153,11 @@ function diffContent(newObj, oldObj) {
         }
         let parts = newObj[site];
         for (const part of Object.keys(parts)) {
-            if (oldObj[site][part] == null || oldObj[site][part]['latestNews'] !== parts[part]['latestNews']) {
+            if (oldObj[site][part] == null || oldObj[site][part]['latestNews'][0] !== parts[part]['latestNews'][0]){
                 if (diff[site] == null) {
                     diff[site] = {};
                 }
-                diff[site][part] = parts[part];
+                diff[site][part] = arrDiff(parts[part]['latestNews'], oldObj[site][part]['latestNews']);
                 result.hasDiff = true;
             }
         }
@@ -173,7 +165,7 @@ function diffContent(newObj, oldObj) {
     return result;
 }
 
-//用server酱推送到wechat
+//用server酱推送到 weChat
 /*
 function pushToWeChat(message,SCKEY){
     let postData = querystring.stringify({
@@ -193,17 +185,17 @@ function createMessage(diff) {
     const diffSites = Object.keys(diff);
 
     let text = `${diffSites[0]} ${diffSites.length > 1 ? '等' : ''} 有变化了`;
-    let pureText ='改变如下: \n';
+    let pureText = '改变如下: \n';
     let desp = '### 改变如下: \n';
     for (const site of diffSites) {
-        pureText +=`${site}:\n`;
+        pureText += `${site}:\n`;
         desp += `#### ${site}:\n`;
         for (const part of Object.keys(diff[site])) {
             desp += `##### ${part}:\n\t${diff[site][part]['latestNews']}\n`;
-            pureText +=`\t${part}:\n\t\t${diff[site][part]['latestNews']}\n`
+            pureText += `\t${part}:\n\t\t${diff[site][part]['latestNews']}\n`
         }
     }
-    return {pureText:pureText,text:text,desp:desp};
+    return {pureText: pureText, text: text, desp: desp};
 }
 
 //对diff进行推送
@@ -227,9 +219,14 @@ function pushDiff(diff) {
 async function workFlow() {
     const prevInfoPath = core.getInput('prevInfoPath',{ required: true });
 
+    const read = readFile(prevInfoPath).catch(err => {
+        console.log(err)
+    });
+
     //得到配置信息
     const sitesConfig = getSitesConfig();
     console.log('Get Sites Config');
+
     //得到每个网站的内容
     let newContent = await getNewContent(sitesConfig);
     console.log('Get content of each site, put into new Content');
@@ -240,29 +237,28 @@ async function workFlow() {
     let oldContent = null;
     console.log('try reading oldContent');
     try {
-        let fileResult = await readFile(prevInfoPath);
+        let fileResult = await read;
         oldContent = JSON.parse(fileResult.toString());
     } catch (e) {
-        console.log("fileReader catch: "+ e);
+        console.log("fileReader catch: " + e);
     }
 
 
     //对比，获得diff对象
     let diff = diffContent(newContent, oldContent);
-    console.log('diff: '+JSON.stringify(diff));
+    console.log('diff: ' + JSON.stringify(diff));
 
 
     //如果有区别，通知外界，把新内容写入文件
     console.log(`hasDiff: ${diff.hasDiff}`);
     if (diff.hasDiff) {
-
-        let result = oldContent == null ? newContent : Object.assign(oldContent,newContent);
+        let result = oldContent == null ? newContent : Object.assign(oldContent, newContent);
         result.lastUpdated = Date();
         let message = createMessage(diff.content);
         core.setOutput('changed', 'true');
-        core.setOutput('title',message.text);//server-chan
-        core.setOutput('markdownText',message.desp);//server-chan
-        core.setOutput('pureText',message.pureText);
+        core.setOutput('title', message.text);//server-chan
+        core.setOutput('markdownText', message.desp);//server-chan
+        core.setOutput('pureText', message.pureText);
 
         await writeFile(prevInfoPath, JSON.stringify(result));
 
@@ -289,14 +285,14 @@ async function workFlow() {
         }
         */
 
-    }else{
+    } else {
         core.setOutput('changed', 'false');
     }
     return "Yes";
 }
 
 
-workFlow().then(r => console.log("Everything is done :"+r));
+workFlow().then(r => console.log("Everything is done :" + r));
 
 
 
