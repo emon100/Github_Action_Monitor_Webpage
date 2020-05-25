@@ -35,7 +35,7 @@
 注意：给使用这个 action 的那一步加 id 。
 
 ```yaml
-    # 使用Github_Action_Monitor_Webpage 的两个steps
+    # 例子：演示使用 Github_Action_Monitor_Webpage 获得信息并传递给其他 step
     - name: Do data work.
       uses: emon100/Github_Action_Monitor_Webpage@v4.1
       id: dataWork # id
@@ -52,23 +52,56 @@
         desp: ${{ steps.dataWork.outputs.markdownText }}
 ```
 
+
+## 输出的具体实例
+```
+  changed: 'true'
+  title: 东大教务处官网 等 有变化了
+  
+  pureText:
+  改变如下：
+    东大教务处官网:
+    	教学研究:
+    		undefined
+    计算机学院官网:
+    	通知公告:
+    		undefined
+    热榜:
+    	V2ex:
+    		undefined
+
+  markdownText:
+  ### 改变如下：
+  ####  东大教务处官网:
+  #####  	教学研究:
+    		  undefined
+  ####  计算机学院官网:
+  #####  	通知公告:
+    		  undefined
+  ####  热榜:
+  #####  	V2ex:
+    		  undefined
+  ```
+
 ## 配置方法
 
-只需用JS写出一个配置文件即可，此项目里有一个[完整例子](https://github.com/emon100/Github_Action_Monitor_Webpage/blob/master/config/config.js)。以下是个不完全的例子：
+只需用 JS 写出一个配置文件即可，此项目里有一个[完整例子](https://github.com/emon100/Github_Action_Monitor_Webpage/blob/master/config/config.js)。以下是个不完全的例子详解：
 ```javascript
+//如需进行网络请求，可以引用 superagent 来用其中的方法请求.
 const superagent = require('superagent');
+//如不定义此项则将会以无请求头的方式请求。
 const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.106 Safari/537.36'
 };
 const sitesConfig = {
     '东大教务处官网': {
-        //type有html和json两种。
+        //type 有 html 和 json 两种，分别对应不同的请求方式。
         type: "html",
         siteURL: "http://aao.neu.edu.cn/",
         parts: {
             '教学研究': {
                 maxLength: 10,
-                //cheerio的dom元素选择器语法，类似jQuery的选择器和CSS Selector语法
+                //selector 会做 document.querySelectorAll() 的参数
                 selector: '[frag="窗口9"] li'
             }
         }
@@ -79,7 +112,7 @@ const sitesConfig = {
         parts: {
             '通知公告': {
                 maxLength: 10,
-                //自己定义的json反序列化之后的对象的处理函数，输出字符串。
+                //用 processor 来指明自己定义的处理函数，输出信息字符串。
                 processor: function (dom) {
                     let domList = dom.window.document.querySelectorAll('[frag="窗口76"] .con .news_list li');
                     let result = [];
@@ -100,8 +133,8 @@ const sitesConfig = {
         siteURL: 'https://www.tophub.fun:8888/v2/GetAllInfoGzip?id=59&page=0',
         parts: {
             'V2ex': {
-                //自己定义的json反序列化之后的对象的处理器，输出字符串。
-                maxLength: 10,//下面processor也有
+                maxLength: 10,
+                //json 对象暂时只能利用自定义的 processor 函数转换为相应的信息字符串。
                 processor: function (obj) {
                     let result= [];
                     if (obj != null && obj["Code"] === 0){

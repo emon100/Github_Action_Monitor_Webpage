@@ -196,7 +196,7 @@ function createMessage(diff) {
         desp += `#### ${site}:\n`;
         for (const part of Object.keys(diff[site])) {
             let detail = '';
-            for (const news of diff[site][part]['latestNews']) {
+            for (const news of diff[site][part]) {
                 detail += `${news}\n`;
             }
             desp += `##### ${part}:\n\t${detail}`;
