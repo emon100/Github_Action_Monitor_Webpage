@@ -162,7 +162,7 @@ function diffContent(newObj, oldObj) {
                     diff[site] = {};
                 }
                 if (diff[site][part] == null){
-                    diff[site][part] == {};    
+                    diff[site][part] = {};    
                 }
                 diff[site][part]['latestNews'] = arrDiff(parts[part]['latestNews'], oldObj[site][part]['latestNews']);
                 result.hasDiff = true;
