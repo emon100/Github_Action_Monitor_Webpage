@@ -200,10 +200,10 @@ function createMessage(diff) {
         for (const part of Object.keys(diff[site])) {
             let detail = '';
             for (const news of diff[site][part]['latestNews']) {
-                detail += `${news}\n`;
+                detail += `\t${news}\n`;
             }
-            desp += `##### ${part}:\n\t${detail}`;
-            pureText += `\t${part}:\n\t\t${detail}`;
+            desp += `##### ${part}:\n${detail}`;
+            pureText += `\t${part}:\n\t${detail}`;
         }
     }
     return {pureText: pureText, text: text, desp: desp};
