@@ -8,7 +8,7 @@ inputs:
     default: '../prevInfo.json'
   configPath:
     description: Path of config.
-    required: false
+    required: true
     default: '../config'
 
 outputs:

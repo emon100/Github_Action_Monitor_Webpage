@@ -28,6 +28,9 @@ const sitesConfig = {
 
                     for (const node of domList) {
                         result.push(`${node.children[0].children[0].textContent} ${node.children[1].textContent}`);
+                        if(result.length>=this.maxLength){
+                            break;
+                        }
                     }
                     return result;
                 }
@@ -44,7 +47,7 @@ const sitesConfig = {
                 processor: function (obj) {
                     let result= [];
                     if (obj != null && obj["Code"] === 0){
-                        for(let i=0;i<10;++i){
+                        for(let i=0;i<this.maxLength;++i){
                             result.push(`${unescape(obj['Data']['data'][i]['Title'])} : ${unescape(obj['Data']['data'][i]['hotDesc'])}`);
                         }
                     }

@@ -5,6 +5,7 @@
 //
 //原理：
 //流水线 workflow：得到内容 -> 与之前内容对比 -> 有变化发请求
+
 const arrDiff = require('arr-diff');
 const util = require('util');
 const core = require('@actions/core');
@@ -12,8 +13,7 @@ const fs = require('fs');
 const request = require('superagent');
 const config = require(core.getInput('configPath'));
 const headers = config.headers;
-const jsdom = require('jsdom');
-const { JSDOM } = jsdom;
+const {JSDOM} = require('jsdom');
 
 //const jsonFile = './prevContent/try.json';
 
@@ -41,6 +41,7 @@ function putNewContentsIntoObj(siteConfig, data, thisSiteContent) {
         }
         obj[part]['latestNews'] = news;
     }
+
     for (const part of Object.keys(siteConfig['parts'])) {
         //遍历每个设置，得到各部分最新信息
         console.log(part);
@@ -49,9 +50,12 @@ function putNewContentsIntoObj(siteConfig, data, thisSiteContent) {
         if (selector != null) {
             try {
                 let newsNodes = data.window.document.querySelectorAll(selector);
-                let latestNews =[];
-                    for (const v of newsNodes) {
+                let latestNews = [];
+                for (const v of newsNodes) {
                     latestNews.push(v.textContent);
+                    if (latestNews.length >= siteConfig['parts'][part]['maxLength']) {
+                        break;
+                    }
                 }
                 console.log("消息: " + latestNews);//得到了！
                 putNewsIntoContentObj(thisSiteContent, part, latestNews);
@@ -60,7 +64,7 @@ function putNewContentsIntoObj(siteConfig, data, thisSiteContent) {
             }
         } else if (processor != null) {
             try {
-                let latestNews = processor(data);
+                let latestNews = siteConfig['parts'][part]['processor'](data);
                 console.log("消息: " + latestNews);//得到了！
                 putNewsIntoContentObj(thisSiteContent, part, latestNews);
             } catch (e) {
@@ -100,7 +104,7 @@ async function scrapSite(siteName, siteConfig) {
 
     let obj;
     if (siteConfig['type'] === "html") {    //解析html
-        obj =  new JSDOM(response.toString());
+        obj = new JSDOM(response.toString());
     } else if (siteConfig['type'] === 'json') {//解析json
         obj = JSON.parse(response);
     } else {
@@ -114,9 +118,9 @@ async function scrapSite(siteName, siteConfig) {
 //批量抓取站点
 async function getNewContent(sitesConfig) {
     let newContent = {};
-    const results = Object.keys(sitesConfig).map(async siteName => {
+    const results = Object.keys(sitesConfig).map(siteName => {
         try {
-            return await scrapSite(siteName, sitesConfig[siteName]);
+            return scrapSite(siteName, sitesConfig[siteName]);
         } catch (e) {
             console.log('getNewContent catch: ' + e);
         }
@@ -153,7 +157,7 @@ function diffContent(newObj, oldObj) {
         }
         let parts = newObj[site];
         for (const part of Object.keys(parts)) {
-            if (oldObj[site][part] == null || oldObj[site][part]['latestNews'][0] !== parts[part]['latestNews'][0]){
+            if (oldObj[site][part] == null || oldObj[site][part]['latestNews'][0] !== parts[part]['latestNews'][0]) {
                 if (diff[site] == null) {
                     diff[site] = {};
                 }
@@ -217,10 +221,10 @@ function pushDiff(diff) {
 //流水线：得到内容 -> 与之前内容对比 -> 写入变量
 
 async function workFlow() {
-    const prevInfoPath = core.getInput('prevInfoPath',{ required: true });
+    const prevInfoPath = core.getInput('prevInfoPath', {required: true});
 
     const read = readFile(prevInfoPath).catch(err => {
-        console.log(err)
+        console.log(err);
     });
 
     //得到配置信息
