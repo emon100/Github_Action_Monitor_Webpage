@@ -161,7 +161,10 @@ function diffContent(newObj, oldObj) {
                 if (diff[site] == null) {
                     diff[site] = {};
                 }
-                diff[site][part] = arrDiff(parts[part]['latestNews'], oldObj[site][part]['latestNews']);
+                if (diff[site][part] == null){
+                    diff[site][part] == {};    
+                }
+                diff[site][part]['latestNews'] = arrDiff(parts[part]['latestNews'], oldObj[site][part]['latestNews']);
                 result.hasDiff = true;
             }
         }
