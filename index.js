@@ -140,7 +140,7 @@ async function getNewContent(sitesConfig) {
     return newContent;
 }
 
-//找新老信息区别
+//找区别，返回新信息新增和修改的部分，但忽略新信息中缺失老信息中有的部分
 function diffContent(newObj, oldObj) {
     let result = {hasDiff: false, content: {}};
     let diff = result.content;
@@ -151,21 +151,26 @@ function diffContent(newObj, oldObj) {
     }
     for (const site of Object.keys(newObj)) {
         if (oldObj[site] == null) {
-            diff[site] = newObj[site];
             result.hasDiff = true;
+            diff[site] = newObj[site];
             continue;
         }
         let parts = newObj[site];
         for (const part of Object.keys(parts)) {
-            if (oldObj[site][part] == null || oldObj[site][part]['latestNews'][0] !== parts[part]['latestNews'][0]) {
+            if (oldObj[site][part] == null ||  oldObj[site][part]['latestNews'] == null || oldObj[site][part]['latestNews'][0] !== parts[part]['latestNews'][0]) {     
+                result.hasDiff = true;
+
                 if (diff[site] == null) {
                     diff[site] = {};
                 }
                 if (diff[site][part] == null){
                     diff[site][part] = {};    
                 }
-                diff[site][part]['latestNews'] = arrDiff(parts[part]['latestNews'], oldObj[site][part]['latestNews']);
-                result.hasDiff = true;
+                if(oldObj[site][part]==null||oldObj[site][part]['latestNews'] == null){
+                    diff[site][part]['latestNews'] = parts[part]['latestNews'];
+                }else{
+                    diff[site][part]['latestNews'] = arrDiff(parts[part]['latestNews'], oldObj[site][part]['latestNews']);
+                }
             }
         }
     }
