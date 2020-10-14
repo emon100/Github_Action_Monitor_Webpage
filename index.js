@@ -15,6 +15,8 @@ const config = require(core.getInput('configPath'));
 const headers = config.headers;
 const {JSDOM} = require('jsdom');
 
+const timeoutTimems = 15000;//Deadline for each query
+
 //const jsonFile = './prevContent/try.json';
 
 //const SCKEYS = [process.env.SCKEY];
@@ -89,6 +91,7 @@ async function scrapSite(siteName, siteConfig) {
         } else {
             response = await request
                 .get(siteConfig['siteURL'])
+                .timeout(timeoutTimems)
                 .set(headers);//await readFile('aaoneu.html');
             response = response.text;
         }
