@@ -96,7 +96,11 @@ async function scrapSite(siteName, siteConfig) {
             response = response.text;
         }
     } catch (e) {
-        console.log('scrapSite catch: ' + e);
+        if(e.timeout){
+            console.log(siteName+' scrapSite Timeout catch:' + e);
+        }else{
+            console.log(siteName+' scrapSite catch: ' + e);
+        }
     }
     if (response == null) {
         return null;
