@@ -55,4 +55,4 @@ jobs:
     #   message: ${{ env.REPORT_DATE }}
    #   env:
       # This is necessary in order to push a commit to the repo
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
+      #  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
