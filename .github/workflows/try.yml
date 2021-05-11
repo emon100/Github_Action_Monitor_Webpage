@@ -40,8 +40,8 @@ jobs:
         ${{ steps.dataWork.outputs.pureText }}
         EOF
 
-    - name: Get date
-      run: echo "::set-env name=REPORT_DATE::$(TZ=':Asia/Shanghai' date '+%Y-%m-%d %T')"
+    #- name: Get date
+     # run: echo "::set-env name=REPORT_DATE::$(TZ=':Asia/Shanghai' date '+%Y-%m-%d %T')"
 
     #- name: Git Auto Commit
     #  uses: stefanzweifel/git-auto-commit-action@v3.0.0
@@ -49,10 +49,10 @@ jobs:
     # Commit message
       #  commit_message: ${{ env.REPORT_DATE }}
 
-    - name: Add & Commit
-      uses: EndBug/add-and-commit@v3.0.0
-      with:
-       message: ${{ env.REPORT_DATE }}
-      env:
+   # - name: Add & Commit
+    #  uses: EndBug/add-and-commit@v3.0.0
+    #  with:
+    #   message: ${{ env.REPORT_DATE }}
+   #   env:
       # This is necessary in order to push a commit to the repo
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
